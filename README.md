@@ -40,6 +40,6 @@ python convert_indices.py --single_sidelength=2 --len_xy=5 --format=dense
 
 python graph_ref.py --N=10 --src="test_data.txt"
 
-Don't write input numbers as exponentials, e.g. Write 5000 instead of 5*10**3.
+Don't write input numbers as exponentials, e.g. write 5000 instead of 5*10**3.
 
 // more description ...
