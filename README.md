@@ -34,11 +34,9 @@ Make sure that at the beginning of each line in the terminal we see "(base)", no
 # Use the command line to execute files. 
 The scripts can be run from the Command line. Examples are
 
-python graph_numba.py --N=10 --N_part=2 --len_xy=5 --src=test_data.txt
-
-python convert_indices.py --single_sidelength=2 --len_xy=5 --format=dense
-
-python graph_ref.py --N=10 --src="test_data.txt"
+    python graph_numba.py --N=10 --N_part=2 --len_xy=5 --src=test_data.txt
+    python convert_indices.py --single_sidelength=2 --len_xy=5 --format=dense
+    python graph_ref.py --N=10 --src="test_data.txt"
 
 Don't write input numbers as exponentials, e.g. write 5000 instead of 5*10**3.
 
