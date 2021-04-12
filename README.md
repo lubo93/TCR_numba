@@ -41,3 +41,9 @@ The scripts can be run from the Command line. Examples are
 Don't write input numbers as exponentials, e.g. write 5000 instead of 5*10**3.
 
 // more description ...
+
+# Use SONIA to create files
+sonia-generate --humanTRB -n 1000000 --pre -o pre_example.txt
+
+
+
