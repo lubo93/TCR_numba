@@ -29,7 +29,7 @@ def convert_edges(name="data/sparse.txt", len_x=10, single_sidelength=4*10**3):
     sidelength = single_sidelength*len_x
     
     data = None
-    
+     
     with open(name, "r") as f:
         lines = f.readlines()
         #data = np.zeros([len(lines), 2])
@@ -41,6 +41,7 @@ def convert_edges(name="data/sparse.txt", len_x=10, single_sidelength=4*10**3):
             #var = int(var.strip())
             val1 = var%sidelength
             val2 = int(var/sidelength)
+            #print("\n --- val1: ", val1, "; val2: ", val2, "; var: ", var, "; sidelength: ", sidelength)
             #data.append([val1, val2])
             if val1 != val2:
                 #data[i][0] = val1
@@ -48,9 +49,10 @@ def convert_edges(name="data/sparse.txt", len_x=10, single_sidelength=4*10**3):
                 data.append([val1, val2])
                 #print("\n unequal val1: ", val1, "; val2: ", val2)
             else:
-                print("\n data i: ", i, "; equal val1: ", val1, "; val2: ", val2)
-        print("\n L: ", len(lines))
-        #lines = np.loadtxt('sparse.txt')
+                pass
+                #print("\n data i: ", i, "; equal val1: ", val1, "; val2: ", val2)
+    #print("\n L: ", len(lines))
+    #lines = np.loadtxt('sparse.txt')
     return data
 
 def assemble_graph(data, cut_value = -1):
@@ -123,7 +125,7 @@ def assemble_graph(data, cut_value = -1):
         if i%10**4 == 0:
             print("\n dt: ", (time.time() - t1))
     print("\n making graph ... ")
-    print("\n len(vals_edge_list): ", len(vals_edge_list))
+    #print("\n len(vals_edge_list): ", len(vals_edge_list))
     G.add_edge_list(vals_edge_list)
     print("\n graph finished")
     t2 = time.time()
@@ -215,8 +217,7 @@ def neighbor_degree(g):
         except:
             dic[k_self] = [k_mean]
     print("\n long done")
-
-    print("\n len(dic.keys()): ", len(dic.keys()))
+    #print("\n len(dic.keys()): ", len(dic.keys()))
     for key in dic.keys():
         dic[key] = np.mean(dic[key])
 
@@ -290,7 +291,17 @@ def pathogen_analysis(g, idx_max):
         except: 
             dic[vp_list[i]] = 0
     res["betweenness_dist"] = dic
-
+    
+    degs = list(g.get_total_degrees(list(range(idx_max))))
+    dic = {}
+    for i in range(idx_max): 
+        print("\n degs[i]: ", degs[i])
+        try: 
+            dic[degs[i]] += 1
+        except: 
+            dic[degs[i]] = 1
+    res["degree_dist"] = dic
+    
     return res
 
 def main(): 
@@ -352,7 +363,7 @@ def main():
     
     for pathogen in pathogens:
         name = "data/" + pathogen + "_small.txt"
-        data = convert_edges(name=name, len_x=10, single_sidelength=4*10**3)
+        data = convert_edges(name=name, len_x=50, single_sidelength=4*10**3)
         g = assemble_graph(data)
         idx_max = 100
         res_raw = pathogen_analysis(g, idx_max)
@@ -367,6 +378,17 @@ def main():
         vals = list(dic.values())
         
         ax_10.plot(keys, vals, '.', color=cols[pathogen])
+        
+        dic = res_raw["degree_dist"]
+        keys = list(dic.keys())
+        vals = list(dic.values())
+        ax_11.plot(keys, vals, '.', color=cols[pathogen])
+
+    ax_10.set_title("pathogens")
+    #ax_10.set_xscale("log")
+    #ax_10.set_yscale("log")
+    ax_11.set_xscale("log")
+    ax_11.set_yscale("log")
     #res[pathogen] = res["betweenness"] 
     plt.show()   
     #xs, ys = viruses(g)
@@ -383,5 +405,4 @@ def main():
     # TODO: some virus graph analysis
 
 if __name__ == "__main__":
-    print("\n name: ", name)
     main()

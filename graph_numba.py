@@ -13,7 +13,6 @@ from numba import cuda
 import funcDictionary as dic
 #import funcDictionaryLevenshtein as dicLeven
 import plotData
-import textdistance as td
 
 import psutil
 from scipy import sparse
@@ -53,14 +52,13 @@ def gpu_sparse(strings1, strings2, num_strings, blockspergrid, threadsperblock):
 
     max_ld = 2
     d_max_ld = cuda.to_device(max_ld)
-    
+
     cuda.synchronize()
     levenshtein[blockspergrid, threadsperblock](d_strings1, d_strings2, num_strings, d_dist, max_ld)
     cuda.synchronize()
     h_dist = d_dist.copy_to_host()
     h_sparse = np.asarray(np.where(h_dist!=0), dtype=np.int32)
     h_sparse = h_sparse[0]
-
     return h_sparse
 
 def total_idx(el, N_part, i, j, len_x, len_y):
@@ -76,14 +74,14 @@ def total_idx(el, N_part, i, j, len_x, len_y):
     Returns: idx: Total index, one number
     """
     offset_index = len_x * i * N_part**2
-    el_x = int(el/N_part)
-    el_y = int(el%N_part)
+    el_y = int(el/N_part)
+    el_x = int(el%N_part)
     el_A = el_x * N_part * len_y
     el_B = el_y + j*N_part
     idx = offset_index + el_A + el_B
     return idx
 
-def adjacency_matrix(seq, name="sparse.txt", idx_max=0, name_params="data/sparse_params.txt", N_part=4*10**3, len_xy=10):
+def adjacency_matrix(seq, name="sparse.txt", idx_max=0, name_params="data/sparse_params.txt", N_part=None, len_xy=None):
     """
     Info: calculating the entire adjacency matrix and save it
     Args: seq: the array of strings
@@ -104,13 +102,11 @@ def adjacency_matrix(seq, name="sparse.txt", idx_max=0, name_params="data/sparse
     maxVals = [1, 2, 3, 4, 5]
     #N_part = 4*10**3
     num_strings = N_part
-    threadsperblock = 256# 24
+    threadsperblock = 256#256# 24
     blockspergrid = ((num_strings)**2 + (threadsperblock - 1)) // threadsperblock
 
     print("\n starting ascii ...")
     strings_1, strings_2 = convert_to_ascii(seq, seq, 30)
-    print("\n seq: ", len(seq), "; len(strings_1): ", len(strings_1), "; len(strings_2): ", len(strings_2))
-    print("\n ")
     print("\n finished ascii")
 
     #@cuda.jit('void(int8[:], int8, int8[:])')
@@ -124,23 +120,20 @@ def adjacency_matrix(seq, name="sparse.txt", idx_max=0, name_params="data/sparse
             h_total = np.array([])
             print("\n ... finished setting to zero")
             for j in range(i, len_y):#250
+                print("\n i: ", i, "j: ", j)
                 strings1 = strings_1[(i*N_part*30):((i+1)*N_part*30)]
                 strings2 = strings_2[(j*N_part*30):((j+1)*N_part*30)]
-                
                 h_sparse = gpu_sparse(strings1, strings2, num_strings, blockspergrid, threadsperblock)
+                
                 print("\n np.shape(h_sparse): ", np.shape(h_sparse), "; np.shape(h_total): ", np.shape(h_total))
 
                 # info: addding the offset index of the block
                 #offset_index = (len_y * i + j) * N_part**2
                 #h_sparse = [el + offset_index for el in h_sparse]
                 h_sparse = [total_idx(el, N_part, i, j, len_x, len_y) for el in h_sparse]
-                
                 # info: removing self edges
                 h_sparse = contract_array(h_sparse, idx_max, N_part*len_y)
-
                 h_total = np.concatenate([h_total, h_sparse])
-                print("\n i: ", i, "j: ", j)
-                
             s = "\n " + str(h_total)
             print("\n h_total[0]: ", h_total[0], "; h_total[1]: ", \
                     h_total[1], "; el%N_part: ", h_total[0]%N_part, \
@@ -171,6 +164,7 @@ if __name__ == "__main__":
     parser.add_argument('--name', help="name of the single index edge list file")
     parser.add_argument('--name_params', help="name of the name_params file")
     parser.add_argument('--with_pathogens', help="1: with pathogens, 0 (default): without pathogens")
+    parser.add_argument('--src', help="a special source name from where to load sequences")
     # TODO: make sure that the path is also set correctly when 
     #     with_pathogens=1, currently he just saves under the 
     #     default name and path
@@ -182,7 +176,8 @@ if __name__ == "__main__":
     parser_name = args.name if not args.name == None else "data/sparse.txt"
     parser_name_params = args.name_params if not args.name_params == None else "data/sparse_params.txt"
     with_pathogens = True if args.name_params == 1 else 0
-    
+    src_name = args.src
+
     for N in Ns:
         plotData.clusterMinLen = 1
         plotData.N = parser_N#10**6#4*10**3
@@ -191,8 +186,8 @@ if __name__ == "__main__":
         plotData.max_ldVal = plotData.maxVal
         gpu_l = 8000 #5000
         step = 0
-        a, a4, seq, filename, ls = dic.loadSequence(step, plotData, isExtractNum=False)
-        
+        a, a4, seq, filename, ls = dic.loadSequence(step, plotData, isExtractNum=False, src=src_name)
+
         #with_pathogens = True
         if with_pathogens:
             pathogens_savenames = ["Influenza", "HIV", "Alzheimer", \

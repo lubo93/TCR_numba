@@ -39,7 +39,7 @@ def make_nets(ls, seq, lMax=1000):
     nets = collections.OrderedDict(sorted(nets.items())) # does he sort the according to items or keys?
     return nets
 
-def loadSequence(step, plotData, i = -1, isExtractNum = True, animal='human'):
+def loadSequence(step, plotData, i = -1, isExtractNum = True, animal='human', src=None):
     """
     info: - load the nucleic acid sequences, generated from SONIA 
         (and stored in a file 'pre.txt' or 'post.txt')
@@ -60,6 +60,8 @@ def loadSequence(step, plotData, i = -1, isExtractNum = True, animal='human'):
             If isExtractNum == True, i must be set to a certain value > -1.
         animal: 'human' -> loads human data
             'mouse' -> loads mouse data
+        src: None: loads from the normal standard files
+            not None: loads the sequences from this filepath
     output: a: list, containing all the loaded data
         a4: list, containing the nucleic acid sequences
         seq: list, containing the nucleic acid sequences first acids until 
@@ -79,6 +81,7 @@ def loadSequence(step, plotData, i = -1, isExtractNum = True, animal='human'):
         if animal == 'mouse':
             filename = 'post_mouse.txt'
 
+    filename = src if not src == None else filename
     # info: check, if plotData has an Ns-array, then choose N = plotData.Ns[i]; alternatively choose N = plotData.N[i]
     if i > -1:
         try: 
@@ -101,7 +104,12 @@ def loadSequence(step, plotData, i = -1, isExtractNum = True, animal='human'):
     # info: which simulates VDJ recombination)
     
     with open(filename) as f:
-        for line in f.readlines():
+        f_lines = f.readlines()
+        if len(f_lines) < N:
+            print("\n Warning: There seem to be less than the requested \
+                    N lines in the file. This can lead to errors, e.g. \
+                    unknown CUDA error.")
+        for line in f_lines:
             if index < N:
                 a.append(line.split('\t'))
                 # info: attach the fourth element  to a4
