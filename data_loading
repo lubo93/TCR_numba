@@ -1,0 +1,4 @@
+# example of how to use pandas to load TCR data
+import pandas as pd
+data = pd.read_csv("pre_example.txt", delimiter="\t", header=None)
+sequences = data.iloc[:,0].to_list()
